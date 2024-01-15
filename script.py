@@ -1,7 +1,5 @@
 from pyspark.sql import SparkSession
 
-spark = SparkSession.builder.master('spark://spark-master:7077').appName("House_prices").getOrCreate()
-
 def init_spark():
     sql = SparkSession.builder\
         .master('spark://spark-master:7077')\
