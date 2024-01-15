@@ -1,0 +1,67 @@
+version: '3.3'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_DB: House_prices_db
+      POSTGRES_USER: arina_untilova
+      POSTGRES_PASSWORD: passw
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./house_prices.csv:/house_prices.csv
+    ports:
+      - "5432:5432"
+  
+  spark-master:
+    image: docker.io/bitnami/spark:3.3
+    container_name: spark-master
+    volumes:
+      - ./script.py:/script.py
+      - ./postgresql-jdbc.jar:/opt/bitnami/spark/jars/postgresql-jdbc.jar
+    environment: 
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark    
+    ports:
+      - "7077:7077"
+      - "9090:8080"
+
+  spark-worker1:
+    image: docker.io/bitnami/spark:3.3
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    container_name: spark-master1
+    volumes:
+      - ./postgresql-jdbc.jar:/opt/bitnami/spark/jars/postgresql-jdbc.jar
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker1
+
+  spark-worker2:
+    image: docker.io/bitnami/spark:3.3
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    container_name: spark-master2
+    depends_on:
+      - spark-master
+    volumes:
+      - ./postgresql-jdbc.jar:/opt/bitnami/spark/jars/postgresql-jdbc.jar
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker2
+
