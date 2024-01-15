@@ -19,7 +19,7 @@ def main():
 
     sql, sc = init_spark()
 
-    df = spark.read.jdbc(url=url
+    df = sql.read.jdbc(url=url
                     , table="House_prices"
                     , properties=properties)
     
